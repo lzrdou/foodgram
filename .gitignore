@@ -132,3 +132,5 @@ dmypy.json
 .idea
 
 images/
+
+.DS_Store
