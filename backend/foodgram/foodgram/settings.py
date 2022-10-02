@@ -1,15 +1,12 @@
 import os
-
-import rest_framework.permissions
-from dotenv import load_dotenv
-
 from datetime import timedelta
+
+from dotenv import load_dotenv
 
 load_dotenv()
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -20,11 +17,19 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
+    'http://localhost',
+    'http://127.0.0.1:8000'
 ]
+
+CORS_ALLOW_ALL_METHODS = [
+    "GET", "POST", "PATCH", "DELETE"
+]
+
+CORS_URLS_REGEX = r'^/api/.*$'
 
 # Application definition
 
@@ -43,6 +48,7 @@ INSTALLED_APPS = [
     'api',
     'recipes',
     'users',
+    'drf_pdf',
 ]
 
 MIDDLEWARE = [
@@ -76,7 +82,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'foodgram.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
@@ -97,7 +102,6 @@ DATABASES = {
     }
 }
 
-
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
 
@@ -116,13 +120,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.2/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'ru'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
@@ -130,11 +133,13 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
@@ -146,18 +151,20 @@ REST_FRAMEWORK = {
     ],
 }
 
-
 SIMPLE_JWT = {
-   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
-   'AUTH_HEADER_TYPES': ('Bearer',),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 AUTH_USER_MODEL = "users.User"
 
 DJOSER = {
     "LOGIN_FIELD": 'email',
+    "PASSWORD_RESET_CONFIRM_URL": "#/password-reset/{uid}/{token}",
     "PERMISSIONS": {
         "user_list": ["rest_framework.permissions.AllowAny"],
+        "user": ["rest_framework.permissions.AllowAny"],
+        "current_user": ["rest_framework.permissions.IsAuthenticated"]
     },
     "HIDE_USERS": False,
     "SERIALIZERS": {
@@ -179,5 +186,3 @@ USERNAME_REGEXES = [
     [fr'(^{RESERVED_USERNAME})$', REJECT_REGEX],
     [r'(^[\w.@+-])$', ACCEPT_REGEX],
 ]
-
-CORS_URLS_REGEX = r'^/api/.*$'

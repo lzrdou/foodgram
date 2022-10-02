@@ -1,6 +1,7 @@
-from django.utils.timezone import now
-from django.db import models
 from django.core.validators import MinValueValidator, RegexValidator
+from django.db import models
+from django.utils.timezone import now
+
 from users.models import User
 
 
@@ -73,7 +74,6 @@ class Recipe(models.Model):
         editable=False
     )
     image = models.ImageField(
-        upload_to='recipes/images/',
         verbose_name='Изображение'
     )
     text = models.TextField(

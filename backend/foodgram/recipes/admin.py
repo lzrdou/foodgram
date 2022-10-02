@@ -1,13 +1,14 @@
 from django.contrib import admin
 
-from .models import Ingredient, Tag, Recipe, Favorite
+from .models import Favorite, Ingredient, Recipe, Tag
 
 
 @admin.register(Recipe)
 class RecipeAdmin(admin.ModelAdmin):
     list_display = (
         'name',
-        'author'
+        'author',
+        'favorite_count'
     )
     list_filter = (
         'author',
@@ -16,7 +17,7 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     empty_value_field = "-пусто-"
 
-    def get_favorite_count(self):
+    def favorite_count(self):
         return Favorite.objects.filter(recipe=self).count()
 
 
