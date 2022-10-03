@@ -132,5 +132,9 @@ dmypy.json
 .idea
 
 images/
+media/
 
 .DS_Store
+
+frontend/node_modules
+frontend/build
