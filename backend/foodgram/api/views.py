@@ -75,6 +75,7 @@ class UserViewSet(DjoserUserViewSet):
                 {'error': 'Не удалось отписаться'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        return None
 
     @action(permission_classes=[IsAuthenticated],
             methods=['get'],
@@ -157,6 +158,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
             if shopping_cart_recipe.delete():
                 return Response(status=status.HTTP_204_NO_CONTENT)
+        return None
 
     @action(permission_classes=[IsAuthenticated],
             methods=['get'],
@@ -222,6 +224,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             favorite_recipe = Favorite.objects.get(user=user, recipe=recipe)
             if favorite_recipe.delete():
                 return Response(status=status.HTTP_204_NO_CONTENT)
+        return None
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
