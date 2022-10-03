@@ -19,9 +19,7 @@ services:
       - ../backend/foodgram/.env
 
   frontend:
-    build:
-      context: ../frontend
-      dockerfile: Dockerfile
+    image: lzrdou/foodgram_frontend:latest
     volumes:
       - ../frontend/:/app/result_build/
     depends_on:
