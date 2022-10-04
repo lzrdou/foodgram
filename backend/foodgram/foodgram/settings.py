@@ -98,6 +98,8 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT')
     }
 }
+
+# ДЛЯ ЛОКАЛЬНОГО ТЕСТИРОВАНИЯ
 # DATABASES = {
 #     "default": {
 #         "ENGINE": "django.db.backends.sqlite3",
