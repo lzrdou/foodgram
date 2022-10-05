@@ -2,13 +2,13 @@ import base64
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db import transaction
+from django.db import IntegrityError
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
 from rest_framework import serializers
 
 from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            RecipeTag, ShoppingCart, Tag)
+                            ShoppingCart, Tag)
 from users.models import Follow, User
 
 
@@ -102,7 +102,7 @@ class UserSubscriptionSerializer(UserSerializer):
             recipes, many=True).data
 
     def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj).count()
+        return obj.recipes.count()
 
 
 class IngredientSerializer(serializers.ModelSerializer):
@@ -243,63 +243,31 @@ class RecipePostSerializer(serializers.ModelSerializer):
             'cooking_time',
         )
 
-    @transaction.atomic()
-    def create(self, validated_data):
-        tags = validated_data.pop('tags')
-        ingredients = validated_data.pop('ingredient')
-        recipe = Recipe.objects.create(**validated_data)
-        for tag in tags:
-            current_tag = Tag.objects.get(id=tag)
-            if RecipeTag.objects.filter(
-                    recipe=recipe, tag=current_tag
-            ).exists():
-                raise serializers.ValidationError('Данный тэг уже добавлен!')
-            RecipeTag.objects.create(recipe=recipe, tag=current_tag)
-        for ingredient in ingredients:
-            ingr_id = int(dict(ingredient)['ingredient_id'])
-            amount = int(dict(ingredient)['amount'])
-            ingredient_check = Ingredient.objects.get(id=ingr_id)
-            if RecipeIngredient.objects.filter(
-                    recipe=recipe, ingredient=ingredient_check
-            ).exists():
-                raise serializers.ValidationError(
-                    'Данный ингредиент уже добавлен!'
-                )
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=ingredient_check,
-                amount=amount
-            )
-        return recipe
+    def _create_or_update(self, validated_data, instance):
+        if instance is None:
+            return Recipe.objects.create(**validated_data)
+        return super().update(instance, validated_data)
 
-    @transaction.atomic()
-    def update(self, instance, validated_data):
-        instance.name = validated_data.get('name', instance.name)
-        instance.image = validated_data.get('image', instance.image)
-        instance.text = validated_data.get('text', instance.text)
-        instance.cooking_time = validated_data.get(
-            'cooking_time', instance.cooking_time
-        )
+    def _perform(self, validated_data, inst=None):
         ingredients = validated_data.pop('ingredient')
         tags = validated_data.pop('tags')
+        instance = self._create_or_update(validated_data, inst)
         instance.tags.set(tags)
         instance.ingredients.clear()
-        for ingredient in ingredients:
-            ingr_id = int(dict(ingredient)['ingredient_id'])
-            amount = int(dict(ingredient)['amount'])
-            ingredient_check = Ingredient.objects.get(id=ingr_id)
-            if RecipeIngredient.objects.filter(
-                    recipe=instance, ingredient=ingredient_check).exists():
-                raise serializers.ValidationError(
-                    'Данный ингредиент уже добавлен!'
-                )
-            RecipeIngredient.objects.create(
-                recipe=instance,
-                ingredient=ingredient_check,
-                amount=amount
+        try:
+            RecipeIngredient.objects.bulk_create(
+                RecipeIngredient(recipe=instance, **ingredient)
+                for ingredient in ingredients
             )
-        instance.save()
+        except IntegrityError:
+            raise serializers.ValidationError()
         return instance
+
+    def create(self, validated_data):
+        return self._perform(validated_data)
+
+    def update(self, instance, validated_data):
+        return self._perform(validated_data, instance)
 
     def to_representation(self, instance):
         serializer = RecipeGetSerializer(instance, context=self.context)

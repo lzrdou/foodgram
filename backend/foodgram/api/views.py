@@ -1,5 +1,3 @@
-from django.db.models import Q
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
 from djoser.views import UserViewSet as DjoserUserViewSet
@@ -9,15 +7,14 @@ from rest_framework.permissions import (IsAuthenticated,
                                         IsAuthenticatedOrReadOnly)
 from rest_framework.response import Response
 
-from .filters import IngredientFilter
+from .filters import IngredientFilter, RecipeFilter
 from .paginators import CustomPagination
 from .permissions import RecipeAuthorOrAdminPermission
 from .serializers import (IngredientSerializer, RecipeGetSerializer,
                           RecipePostSerializer, ShoppingFavoriteSerializer,
                           TagSerializer, UserSerializer,
                           UserSubscriptionSerializer)
-from recipes.models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
+from recipes.models import Favorite, Ingredient, Recipe, ShoppingCart, Tag
 from users.models import Follow, User
 
 
@@ -25,14 +22,12 @@ class UserViewSet(DjoserUserViewSet):
     """Вьюсет для пользователей."""
     pagination_class = CustomPagination
 
-    @action(permission_classes=[IsAuthenticatedOrReadOnly],
+    @action(permission_classes=[IsAuthenticated],
             methods=['post', 'delete'],
             detail=True)
     def subscribe(self, request, id):
         """Метод подписки (отписки) на пользователя."""
         user = request.user
-        if user.is_anonymous:
-            return False
         author = get_object_or_404(User, id=id)
         if request.method == 'POST':
             if user == author:
@@ -117,6 +112,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         RecipeAuthorOrAdminPermission,
     ]
     filter_backends = (DjangoFilterBackend,)
+    filterset_class = RecipeFilter
 
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
@@ -159,35 +155,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
             if shopping_cart_recipe.delete():
                 return Response(status=status.HTTP_204_NO_CONTENT)
         return None
-
-    @action(permission_classes=[IsAuthenticated],
-            methods=['get'],
-            detail=False)
-    def download_shopping_cart(self, request):
-        """Метод загрузки списка покупок."""
-        user = request.user
-        shopping_cart_dict = {}
-        cart_objects = ShoppingCart.objects.filter(user=user)
-        recipes_id_list = [obj.recipe_id for obj in cart_objects]
-        recipes_ingredients = RecipeIngredient.objects.filter(
-            recipe_id__in=recipes_id_list
-        )
-        for obj in recipes_ingredients:
-            name = obj.ingredient.name
-            measurement_unit = obj.ingredient.measurement_unit
-            amount = obj.amount
-            if obj.ingredient.name not in shopping_cart_dict:
-                shopping_cart_dict[name] = [measurement_unit, amount]
-            else:
-                shopping_cart_dict[name][1] += amount
-        response = HttpResponse(content_type='text/txt')
-        response['Content-Disposition'] = (
-            'attachment; filename="shopping_list.txt"'
-        )
-        response.write('"Продуктовый помощник"\nБутырин Артемий - 2022\n\n')
-        for name, values in shopping_cart_dict.items():
-            response.write(f'{name} - {values[1]} ({values[0]})\n')
-        return response
 
     @action(permission_classes=[IsAuthenticated],
             methods=['post', 'delete'],
@@ -233,42 +200,24 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = Recipe.objects.all()
-        is_favorited = self.request.query_params.get('is_favorited')
-        is_in_shopping_cart = self.request.query_params.get(
-            'is_in_shopping_cart'
-        )
-        author = self.request.query_params.get('author')
-        tags = self.request.query_params.getlist('tags')
-        user_id = self.request.user.id
-        criterion_tags = Q(tags__slug__in=tags)
-
-        if author:
-            queryset = queryset.filter(author_id=author)
-        elif tags:
-            queryset = queryset.filter(criterion_tags).distinct()
-        if user_id is not None:
-            in_cart_list = [
-                obj.recipe_id for obj in ShoppingCart.objects.filter(
-                    user__id=user_id
-                )
-            ]
-            favorite_set = [
-                obj.recipe_id for obj in Favorite.objects.filter(
-                    user__id=user_id
-                )
-            ]
-            criterion_fav = Q(id__in=favorite_set)
-            criterion_cart = Q(id__in=in_cart_list)
+        if self.request.user.is_authenticated:
+            is_favorited = self.request.query_params.get('is_favorited')
+            is_in_shopping_cart = self.request.query_params.get(
+                'is_in_shopping_cart'
+            )
+            user = self.request.user
             if is_favorited:
                 if int(is_favorited) == 1:
                     queryset = queryset.filter(
-                        criterion_fav & criterion_tags
+                        fav_recipe__user=user
                     ).distinct()
                 elif int(is_favorited) == 0:
-                    queryset = queryset.exclude(criterion_fav)
+                    queryset = queryset.exclude(fav_recipe__user=user)
             elif is_in_shopping_cart:
                 if int(is_in_shopping_cart) == 1:
-                    queryset = queryset.filter(criterion_cart).distinct()
+                    queryset = queryset.filter(
+                        shop_recipe__user=user
+                    ).distinct()
                 if int(is_in_shopping_cart) == 0:
-                    queryset = queryset.exclude(criterion_cart)
+                    queryset = queryset.exclude(shop_recipe__user=user)
         return queryset
