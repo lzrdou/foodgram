@@ -117,81 +117,57 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(author=self.request.user)
 
-    @action(permission_classes=[IsAuthenticated],
-            methods=['post', 'delete'],
-            detail=True)
-    def shopping_cart(self, request, pk):
-        """Метод добавления рецепта в список покупок."""
-        user = request.user
-        recipe = Recipe.objects.get(id=pk)
+    def _perform(self, model, request, pk):
+        user = self.request.user
+        recipe = get_object_or_404(Recipe, id=pk)
         if request.method == 'POST':
-            if ShoppingCart.objects.filter(
-                    user=user,
-                    recipe=recipe,
-            ).exists():
-                return Response(
-                    {'error': 'Вы уже добавили этот рецепт в корзину'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if ShoppingCart.objects.create(user=user, recipe=recipe):
-                serializer = ShoppingFavoriteSerializer(
-                    recipe, context={'request': request}
-                )
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED
-                )
-        if request.method == 'DELETE':
-            if not ShoppingCart.objects.filter(
-                    user=user,
-                    recipe=recipe,
-            ).exists():
-                return Response(
-                    {'error': 'Вы не добавляли этот рецепт в корзину'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            shopping_cart_recipe = ShoppingCart.objects.get(
-                user=user, recipe=recipe
+            return self._add_recipe_to(model, user=user, recipe=recipe)
+        return self._delete_recipe_from(model, user=user, recipe=recipe)
+
+    def _add_recipe_to(self, model, user, recipe):
+        if model.objects.filter(
+            user=user,
+            recipe=recipe
+        ).exists():
+            return Response(
+                {f'error: Объект {model.__name__} '
+                 f'с такими данными уже существует'}
             )
-            if shopping_cart_recipe.delete():
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        return None
+        if model.objects.create(user=user, recipe=recipe):
+            serializer = ShoppingFavoriteSerializer(
+                recipe, context={'request': self.request}
+            )
+            return Response(
+                serializer.data, status=status.HTTP_201_CREATED
+            )
+
+    def _delete_recipe_from(self, model, user, recipe):
+        if not model.objects.filter(
+            user=user,
+            recipe=recipe
+        ).exists():
+            return Response(
+                {f'error: Объект {model.__name__} '
+                 f'с такими данными не существует'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        obj = model.objects.get(user=user, recipe=recipe)
+        if obj.delete():
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(permission_classes=[IsAuthenticated],
             methods=['post', 'delete'],
             detail=True)
-    def favorite(self, request, pk):
+    def shopping_cart(self, request, pk=None):
+        """Метод добавления рецепта в список покупок."""
+        return self._perform(ShoppingCart, request, pk)
+
+    @action(permission_classes=[IsAuthenticated],
+            methods=['post', 'delete'],
+            detail=True)
+    def favorite(self, request, pk=None):
         """Метод добавления рецепта в избранное."""
-        user = request.user
-        recipe = Recipe.objects.get(id=pk)
-        if request.method == 'POST':
-            if Favorite.objects.filter(
-                    user=user,
-                    recipe=recipe,
-            ).exists():
-                return Response(
-                    {'error': 'Вы уже добавили этот рецепт в избранное'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            if Favorite.objects.create(user=user, recipe=recipe):
-                serializer = ShoppingFavoriteSerializer(
-                    recipe, context={'request': request}
-                )
-                return Response(
-                    serializer.data, status=status.HTTP_201_CREATED
-                )
-        if request.method == 'DELETE':
-            if not Favorite.objects.filter(
-                    user=user,
-                    recipe=recipe,
-            ).exists():
-                return Response(
-                    {'error': 'Вы не добавляли этот рецепт в избранное'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            favorite_recipe = Favorite.objects.get(user=user, recipe=recipe)
-            if favorite_recipe.delete():
-                return Response(status=status.HTTP_204_NO_CONTENT)
-        return None
+        return self._perform(Favorite, request, pk)
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
