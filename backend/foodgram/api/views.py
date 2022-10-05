@@ -140,6 +140,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             return Response(
                 serializer.data, status=status.HTTP_201_CREATED
             )
+        return None
 
     def _delete_recipe_from(self, model, user, recipe):
         if not model.objects.filter(
@@ -154,6 +155,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
         obj = model.objects.get(user=user, recipe=recipe)
         if obj.delete():
             return Response(status=status.HTTP_204_NO_CONTENT)
+        return None
 
     @action(permission_classes=[IsAuthenticated],
             methods=['post', 'delete'],
