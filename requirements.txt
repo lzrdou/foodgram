@@ -12,3 +12,4 @@ python-decouple
 gunicorn
 djoser
 django-filter
+drf_pdf
