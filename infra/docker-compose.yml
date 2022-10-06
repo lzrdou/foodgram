@@ -8,7 +8,7 @@ services:
       - /var/lib/postgresql/data/
 
     env_file:
-      - ../backend/foodgram/.env
+      - ./.env
 
   web:
     image: lzrdou/foodgram:latest
@@ -16,7 +16,7 @@ services:
     depends_on:
       - db
     env_file:
-      - ../backend/foodgram/.env
+      - ./.env
 
   frontend:
     image: lzrdou/foodgram_frontend:latest
