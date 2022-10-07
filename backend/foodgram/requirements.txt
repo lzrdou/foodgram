@@ -14,3 +14,4 @@ djoser
 django-filter
 drf_pdf
 Pillow==9.0.0
+django-cors-headers
