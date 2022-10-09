@@ -249,20 +249,14 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def _perform(self, validated_data, inst=None):
-        ingredients = validated_data.pop('ingredients')
+        ingredients = validated_data.pop('ingredient')
         tags = validated_data.pop('tags')
         recipe = self._create_or_update(validated_data, inst)
         recipe.tags.set(tags)
         recipe.ingredients.clear()
         try:
             RecipeIngredient.objects.bulk_create(
-                RecipeIngredient(
-                    recipe=recipe,
-                    ingredient=Ingredient.objects.get(
-                        int(dict(ingredient)['ingredient_id'])
-                    ),
-                    amount=int(dict(ingredient)['amount'])
-                )
+                RecipeIngredient(recipe=recipe, **ingredient)
                 for ingredient in ingredients
             )
         except IntegrityError:
