@@ -4,8 +4,8 @@ from django.urls import include, path, re_path
 from django.views.static import serve
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path("api/", include("api.urls", namespace="api")),
+    path("admin/", admin.site.urls),
     re_path(
         r'^media/(?P<path>.*)$',
         serve,
