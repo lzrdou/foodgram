@@ -16,7 +16,6 @@ router.register('users', UserViewSet)
 
 urlpatterns = [
     path('auth/', include('djoser.urls.authtoken')),
-    path('admin/', admin.site.urls),
     path('recipes/download_shopping_cart/', download_shopping_cart),
     path('', include(router.urls)),
 ]
