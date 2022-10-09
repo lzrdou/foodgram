@@ -23,8 +23,8 @@ class RecipeAdmin(admin.ModelAdmin):
     )
     empty_value_field = "-пусто-"
 
-    def favorite_count(self):
-        return Favorite.objects.filter(recipe=self).count()
+    def favorite_count(self, obj):
+        return Favorite.objects.filter(recipe=obj).count()
 
 
 @admin.register(Ingredient)
