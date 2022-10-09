@@ -19,14 +19,14 @@ def download_shopping_cart(request):
     ).order_by(
         'ingredient__name'
     )
-    file = open('shopping-list.txt', 'a+')
-    file.write('"Продуктовый помощник"\nБутырин Артемий - 2022\n\n')
+    response = HttpResponse(content_type='text/plain')
+    response.write('"Продуктовый помощник"\nБутырин Артемий - 2022\n\n')
     for ingredient in ingredients:
         name = ingredient['ingredient__name']
         amount = ingredient['amount']
         measurement_unit = ingredient['ingredient__measurement_unit']
-        file.write(f'{name} - {amount} ({measurement_unit})\n')
-    response = HttpResponse(content_type='text/txt')
-    response.write(file)
-    file.close()
+        response.write(f'{name} - {amount} ({measurement_unit})\n')
+    response['Content-Disposition'] = (
+        'attachment; filename="shopping_list.txt"'
+    )
     return response
