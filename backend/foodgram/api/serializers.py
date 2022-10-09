@@ -249,7 +249,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
     def _perform(self, validated_data, inst=None):
-        ingredients = validated_data.pop('ingredient')
+        ingredients = validated_data.pop('ingredients')
         tags = validated_data.pop('tags')
         recipe = self._create_or_update(validated_data, inst)
         recipe.tags.set(tags)
