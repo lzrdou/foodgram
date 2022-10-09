@@ -251,13 +251,13 @@ class RecipePostSerializer(serializers.ModelSerializer):
     def _perform(self, validated_data, inst=None):
         ingredients = validated_data.pop('ingredient')
         tags = validated_data.pop('tags')
-        instance = self._create_or_update(validated_data, inst)
-        instance.tags.set(tags)
-        instance.ingredients.clear()
+        recipe = self._create_or_update(validated_data, inst)
+        recipe.tags.set(tags)
+        recipe.ingredients.clear()
         try:
             RecipeIngredient.objects.bulk_create(
                 RecipeIngredient(
-                    recipe=instance,
+                    recipe=recipe,
                     ingredient=Ingredient.objects.get(
                         int(dict(ingredient)['ingredient_id'])
                     ),
@@ -267,7 +267,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             )
         except IntegrityError:
             raise serializers.ValidationError()
-        return instance
+        return recipe
 
     def create(self, validated_data):
         return self._perform(validated_data)
