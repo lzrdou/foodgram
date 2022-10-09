@@ -26,7 +26,7 @@ def download_shopping_cart(request):
         amount = ingredient['amount']
         measurement_unit = ingredient['ingredient__measurement_unit']
         file.write(f'{name} - {amount} ({measurement_unit})\n')
-    file.close()
     response = HttpResponse(content_type='text/txt')
     response.write(file)
+    file.close()
     return response
