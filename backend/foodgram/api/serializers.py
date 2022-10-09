@@ -2,7 +2,7 @@ import base64
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.files.base import ContentFile
-from django.db import IntegrityError
+from django.db import IntegrityError, transaction
 from djoser.serializers import UserCreateSerializer as BaseUserCreateSerializer
 from djoser.serializers import UserSerializer as BaseUserSerializer
 from rest_framework import serializers
@@ -248,6 +248,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             return Recipe.objects.create(**validated_data)
         return super().update(instance, validated_data)
 
+    @transaction.atomic()
     def _perform(self, validated_data, inst=None):
         ingredients = validated_data.pop('ingredient')
         tags = validated_data.pop('tags')
