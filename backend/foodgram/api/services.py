@@ -19,7 +19,7 @@ def download_shopping_cart(request):
     ).order_by(
         'ingredient__name'
     )
-    file = open('shopping_list.txt', 'a+')
+    file = open('shopping-list.txt', 'a+')
     file.write('"Продуктовый помощник"\nБутырин Артемий - 2022\n\n')
     for ingredient in ingredients:
         name = ingredient['ingredient__name']
