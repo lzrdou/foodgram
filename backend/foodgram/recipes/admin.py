@@ -52,6 +52,9 @@ class TagAdmin(admin.ModelAdmin):
     list_filter = (
         'name',
     )
+    search_fields = (
+        'name',
+    )
     empty_value_field = "-пусто-"
 
 
