@@ -256,7 +256,13 @@ class RecipePostSerializer(serializers.ModelSerializer):
         instance.ingredients.clear()
         try:
             RecipeIngredient.objects.bulk_create(
-                RecipeIngredient(recipe=instance, **ingredient)
+                RecipeIngredient(
+                    recipe=instance,
+                    ingredient=Ingredient.objects.get(
+                        int(dict(ingredient)['ingredient_id'])
+                    ),
+                    amount=int(dict(ingredient)['amount'])
+                )
                 for ingredient in ingredients
             )
         except IntegrityError:
