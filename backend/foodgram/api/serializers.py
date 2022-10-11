@@ -267,9 +267,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
                 for ingredient in ingredients
             )
         except IntegrityError as e:
-            raise serializers.ValidationError(
-                f'При создании рецепта возникла ошибка {e}.'
-            )
+            raise serializers.ValidationError(f'{e.__cause__}')
         return recipe
 
     def create(self, validated_data):
