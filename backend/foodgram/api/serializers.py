@@ -223,11 +223,12 @@ class RecipeIngredientPostSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
-    def validate_amount(self, data):
+    def validate(self, data):
         if data['amount'] < 1:
             raise serializers.ValidationError(
                 'Минимальное количество ингредиента - 1.'
             )
+        return data
 
 
 class RecipePostSerializer(serializers.ModelSerializer):
@@ -266,8 +267,8 @@ class RecipePostSerializer(serializers.ModelSerializer):
                 RecipeIngredient(recipe=recipe, **ingredient)
                 for ingredient in ingredients
             )
-        except IntegrityError as e:
-            raise serializers.ValidationError(f'{e.__cause__}')
+        except IntegrityError:
+            raise serializers.ValidationError()
         return recipe
 
     def create(self, validated_data):
@@ -279,6 +280,19 @@ class RecipePostSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = RecipeGetSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate(self, data):
+        ingredients = data['ingredient']
+        ingr_id = [
+            int(dict(ingredient)['ingredient_id'])
+            for ingredient in ingredients
+        ]
+        for id in ingr_id:
+            if ingr_id.count(id) > 1:
+                raise serializers.ValidationError(
+                    'Ингредиенты не могут повторяться.'
+                )
+        return data
 
 
 class ShoppingFavoriteSerializer(serializers.ModelSerializer):
