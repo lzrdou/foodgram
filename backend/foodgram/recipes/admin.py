@@ -1,7 +1,36 @@
 from django.contrib import admin
+from django.forms.models import BaseInlineFormSet
 
 from .models import (Favorite, Ingredient, Recipe, RecipeIngredient,
-                     ShoppingCart, Tag)
+                     ShoppingCart, Tag, RecipeTag)
+
+
+class RecipeIngredientInLineFormset(BaseInlineFormSet):
+    def clean_ingredients(self):
+        if len(self.cleaned_data['ingredients']) < 1:
+            return 'Необходим минимум 1 ингредиент.'
+        return self.cleaned_data['ingredients']
+
+
+class RecipeIngredientsInline(admin.TabularInline):
+    model = RecipeIngredient
+    formset = RecipeIngredientInLineFormset
+    min_num = 1
+    extra = 0
+
+
+class RecipeTagInLineFormset(BaseInlineFormSet):
+    def clean_tags(self):
+        if len(self.cleaned_data['tgs']) < 1:
+            return 'Необходим минимум 1 тег.'
+        return self.cleaned_data['tags']
+
+
+class RecipeTagsInline(admin.TabularInline):
+    model = RecipeTag
+    formset = RecipeTagInLineFormset
+    min_num = 1
+    extra = 0
 
 
 @admin.register(Recipe)
@@ -21,6 +50,7 @@ class RecipeAdmin(admin.ModelAdmin):
         'name',
         'tags'
     )
+    inlines = (RecipeIngredientsInline, RecipeTagsInline)
     empty_value_field = "-пусто-"
 
     def favorite_count(self, obj):
