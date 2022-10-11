@@ -223,6 +223,12 @@ class RecipeIngredientPostSerializer(serializers.ModelSerializer):
         model = RecipeIngredient
         fields = ('id', 'amount')
 
+    def validate_amount(self, data):
+        if data['amount'] < 1:
+            raise serializers.ValidationError(
+                'Минимальное количество ингредиента - 1.'
+            )
+
 
 class RecipePostSerializer(serializers.ModelSerializer):
     """Сериализатор модели Recipe (метод POST)."""
@@ -273,6 +279,18 @@ class RecipePostSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         serializer = RecipeGetSerializer(instance, context=self.context)
         return serializer.data
+
+    def validate_inredients(self, data):
+        ingredients = data['ingredients']
+        ingredients_id = [
+            int(dict(ingredient)['ingredient_id'])
+            for ingredient in ingredients
+        ]
+        for id in ingredients_id:
+            if ingredients_id.count(id) > 1:
+                raise serializers.ValidationError(
+                    'Ингредиенты не должны повторяться.'
+                )
 
 
 class ShoppingFavoriteSerializer(serializers.ModelSerializer):
