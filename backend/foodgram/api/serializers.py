@@ -268,7 +268,7 @@ class RecipePostSerializer(serializers.ModelSerializer):
             )
         except IntegrityError as e:
             raise serializers.ValidationError(
-                f'При создании рецепта возникла ошибка {e}'
+                f'При создании рецепта возникла ошибка {e}.'
             )
         return recipe
 
