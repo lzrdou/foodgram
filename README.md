@@ -3,7 +3,6 @@
 
 ![project workflow](https://github.com/lzrdou/foodgram-project-react/actions/workflows/main.yml/badge.svg)
 
-### Автор
 Проект разработан в рамках курсов Yandex.Practicum.
 
 ### Лицензия
